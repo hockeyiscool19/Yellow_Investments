@@ -1,0 +1,31 @@
+import pandas as pd
+import numpy as np
+import sqlalchemy 
+
+class Loader:
+    def __init__(self,tables,schema,pkey):
+        self.length = len(tables)
+        self.tables = tables
+        self.engine = sqlalchemy.create_engine('postgresql://postgres:1Hockeyiscold*@localhost:5432/yellow_investments')
+        self.schema = schema
+        self.pkey = pkey
+
+    def get_df_name(self,index):
+        table = self.tables[index]
+        tableName = [x for x in globals() if globals()[x] is table][0]
+        return tableName
+
+    def loading(self):
+        e = self.engine
+        for i in range(0,len(self.tables)-1):
+            print(i)
+            tableName = self.get_df_name(i)
+
+            self.tables[i].to_sql(tableName,schema=self.schema,con = e.connect(),if_exists='replace',index=False)
+            with self.engine.connect() as con:
+                s = self.schema
+                p = self.pkey
+                try:
+                    con.execute(f'ALTER TABLE {s}.{tableName} ADD PRIMARY KEY ({p});')
+                except:
+                    print(f"failed at {i}")
